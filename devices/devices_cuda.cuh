@@ -2,11 +2,27 @@
 
 #include <cstdlib>
 
-#include <algorithm>
-#include <stdexcept>
+#include <sstream>
 #include <vector>
 
 #include <Kokkos_Core.hpp>
+
+#define checkOutcome(error) \
+    cuda_extra::checkOutcomeManual(error, __FILE__, __LINE__)
+
+namespace cuda_extra {
+
+void checkOutcomeManual(cudaError_t const error, char const* file,
+                        int const line) {
+    if (error != cudaSuccess) {
+        std::stringstream message;
+        message << "Cuda error (" << file << ":" << line
+                << "): " << cudaGetErrorString(error);
+        Kokkos::abort(message.str().c_str());
+    }
+}
+
+}  // namespace cuda_extra
 
 namespace devices {
 
@@ -18,11 +34,13 @@ class DevicesCuda {
    public:
     DevicesCuda() {
         std::size_t const numDevices = getNumDevices();
+        m_streams.reserve(numDevices);
         for (std::size_t device = 0; device < numDevices; device++) {
             cudaStream_t stream;
-            cudaSetDevice(device);
-            cudaStreamCreate(&stream);
-            m_streams.push_back(stream);
+            checkOutcome(cudaSetDevice(device));
+            checkOutcome(cudaStreamCreate(&stream));
+
+            m_streams.emplace_back(stream);
         }
     }
 
@@ -33,27 +51,24 @@ class DevicesCuda {
         std::size_t const numDevices = getNumDevices();
         for (std::size_t device = 0; device < numDevices; device++) {
             cudaStream_t stream = m_streams[device];
-            cudaSetDevice(device);
-            cudaStreamDestroy(stream);
+            checkOutcome(cudaSetDevice(device));
+            checkOutcome(cudaStreamDestroy(stream));
         }
     }
 
     std::vector<Kokkos::Cuda> getSpaces() const {
-        std::vector<Kokkos::Cuda> spaces(getNumDevices());
-        std::transform(
-            m_streams.cbegin(), m_streams.cend(), spaces.begin(),
-            [](cudaStream_t const stream) { return Kokkos::Cuda(stream); });
+        std::vector<Kokkos::Cuda> spaces;
+        spaces.reserve(m_streams.size());
+        for (cudaStream_t const stream : m_streams) {
+            spaces.emplace_back(Kokkos::Cuda(stream));
+        }
 
         return spaces;
     }
 
     static std::size_t getNumDevices() {
         int numDevices;
-        cudaError_t outcome = cudaGetDeviceCount(&numDevices);
-
-        if (outcome != cudaSuccess) {
-            throw std::runtime_error("No usable device found");
-        }
+        checkOutcome(cudaGetDeviceCount(&numDevices));
 
         return numDevices;
     }

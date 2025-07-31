@@ -9,13 +9,13 @@ include(FetchContent)
 
 find_package(OpenMP REQUIRED)
 
-find_package(Kokkos 4.6.2 QUIET)
+find_package(Kokkos 4.7.0 QUIET)
 if(NOT Kokkos_FOUND)
+    message(STATUS "Getting Kokkos from the repository")
     FetchContent_Declare(
         kokkos
-        URL https://github.com/kokkos/kokkos/releases/download/4.6.02/kokkos-4.6.02.tar.gz
-        URL_HASH SHA256=baf1ebbe67abe2bbb8bb6aed81b4247d53ae98ab8475e516d9c87e87fa2422ce
-        DOWNLOAD_EXTRACT_TIMESTAMP ON
+        GIT_REPOSITORY https://github.com/kokkos/kokkos
+        GIT_TAG release-candidate-4.7.00
     )
     FetchContent_MakeAvailable(kokkos)
 endif()
@@ -62,3 +62,21 @@ target_link_libraries(
         OpenMP::OpenMP_CXX
         utils
 )
+
+option(
+    HIHYP_TEST_PARTITION_SPACE
+    "Build a library to test partition space with Kokkos"
+)
+
+if(HIHYP_TEST_PARTITION_SPACE)
+    add_executable(
+        partition-space-multi-gpu
+        partition_space_multi_gpu.cpp
+    )
+
+    target_link_libraries(
+        partition-space-multi-gpu
+        PRIVATE
+            Kokkos::kokkos
+    )
+endif()

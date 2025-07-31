@@ -1,9 +1,11 @@
 #include <cmath>
+
 #include <vector>
 
 #include <omp.h>
 
 #include <Kokkos_Core.hpp>
+
 
 #include "command_line.hpp"
 #include "devices.hpp"
@@ -53,16 +55,18 @@ int main(int argc, char *argv[]) {
 
     // create views
     std::vector<ViewType> views;
-    views.push_back(
-        ViewType(Kokkos::view_alloc("data", spaces[0]), numSubElements));
+    views.reserve(numDevices);
+    for (std::size_t device = 0; device < numDevices; device++) {
+        views.emplace_back(ViewType(Kokkos::view_alloc("data", spaces[device]),
+                                    numSubElements));
+    }
     auto viewMain = views[0];
     Kokkos::parallel_for(
         "Fill data", Kokkos::RangePolicy(spaces[0], 0, numSubElements),
         KOKKOS_LAMBDA(std::size_t const i) { viewMain(i) = i; });
     Kokkos::fence("Wait for fill data");
     for (std::size_t device = 1; device < numDevices; device++) {
-        views.push_back(
-            Kokkos::create_mirror_view_and_copy(spaces[device], views[0]));
+        Kokkos::deep_copy(views[device], viewMain);
     }
 
     // create vector of sums
@@ -70,20 +74,20 @@ int main(int argc, char *argv[]) {
 
     // create the GPU partition
     std::vector<Kokkos::DefaultExecutionSpace> instances;
-    for (auto const space : spaces) {
-        std::vector<std::size_t> weights(threadsPerDevice);
-        std::fill(weights.begin(), weights.end(), 1);
-        auto spaceInstances =
-            Kokkos::Experimental::partition_space(space, weights);
+    for (auto const space : spaces) {  // i.e. loop on devices
+        std::vector<Kokkos::DefaultExecutionSpace> spaceInstances;
+
+        std::vector<std::size_t> weights(threadsPerDevice, 1);
+        spaceInstances = Kokkos::Experimental::partition_space(space, weights);
+
         instances.insert(instances.cend(), spaceInstances.cbegin(),
                          spaceInstances.cend());
     }
 
     // create the data partition
     std::vector<ViewType> dataSet;
-    for (auto const view : views) {
-        std::vector<ViewType> viewInstances(threadsPerDevice);
-        std::fill(viewInstances.begin(), viewInstances.end(), view);
+    for (auto const view : views) {  // i.e. loop on devices
+        std::vector<ViewType> viewInstances(threadsPerDevice, view);
         dataSet.insert(dataSet.cend(), viewInstances.cbegin(),
                        viewInstances.cend());
     }
@@ -92,8 +96,8 @@ int main(int argc, char *argv[]) {
 
     Kokkos::Profiling::pushRegion("work");
 
-    // start host parallel region
-    #pragma omp parallel for
+// start host parallel region
+#pragma omp parallel for
     for (std::size_t element = 0; element < numElements; element++) {
         std::size_t const threadId = omp_get_thread_num();
 
