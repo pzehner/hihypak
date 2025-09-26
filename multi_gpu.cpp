@@ -60,6 +60,7 @@ int main(int argc, char *argv[]) {
         views.emplace_back(ViewType(Kokkos::view_alloc("data", spaces[device]),
                                     numSubElements));
     }
+    // create one view on the first device, then duplicate it on the other devices
     auto viewMain = views[0];
     Kokkos::parallel_for(
         "Fill data", Kokkos::RangePolicy(spaces[0], 0, numSubElements),
@@ -99,7 +100,7 @@ int main(int argc, char *argv[]) {
 // start host parallel region
 #pragma omp parallel for
     for (std::size_t element = 0; element < numElements; element++) {
-        std::size_t const threadId = omp_get_thread_num();
+        std::size_t const threadId = ::omp_get_thread_num();
 
         auto instance = instances[threadId];
         auto data = dataSet[threadId];

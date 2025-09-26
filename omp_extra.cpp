@@ -10,7 +10,7 @@ std::size_t getNumThreads() {
     #pragma omp parallel
     {
         #pragma omp single
-        numThreads = omp_get_num_threads();
+        numThreads = ::omp_get_num_threads();
     }
 
     return numThreads;

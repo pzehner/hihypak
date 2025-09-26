@@ -54,7 +54,7 @@ int main(int argc, char * argv[]) {
     // start host parallel region
     #pragma omp parallel for
     for (std::size_t element = 0; element < numElements; element++) {
-        std::size_t const threadId = omp_get_thread_num();
+        std::size_t const threadId = ::omp_get_thread_num();
 
         // parallel region on GPU
         long sum = 0;

@@ -14,15 +14,15 @@ namespace devices {
 namespace impl {
 
 class DevicesSycl {
-    std::vector<sycl::queue> m_queues;
+    std::vector<sycl::queue> queues;
 
    public:
     DevicesSycl() {
-        std::size_t const numDevices = getNumDevices();
-        auto const devices = getDevices();
+        std::size_t const numDevices = this->getNumDevices();
+        auto const devices = this->getDevices();
         for (std::size_t device = 0; device < numDevices; device++) {
             sycl::queue queue(devices[device], sycl::property::queue::in_order());
-            m_queues.push_back(queue);
+            this->queues.push_back(queue);
         }
     }
 
@@ -30,21 +30,21 @@ class DevicesSycl {
     DevicesSycl& operator=(const DevicesSycl&) = delete;
 
     std::vector<Kokkos::SYCL> getSpaces() const {
-        std::vector<Kokkos::SYCL> spaces(getNumDevices());
+        std::vector<Kokkos::SYCL> spaces(this->getNumDevices());
         std::transform(
-            m_streams.cbegin(), m_streams.cend(), spaces.begin(),
+            streams.cbegin(), streams.cend(), spaces.begin(),
             [](sycl::queue const queue) { return Kokkos::SYCL(queue); });
 
         return spaces;
     }
 
     static std::size_t getNumDevices() {
-        return getDevices().size();
+        return this->getDevices().size();
     }
 
    private:
     static std::vector<sycl::device> getDevices() {
-         return sycl::device::gett_devices(sycl::info::device_type::gpu);
+         return sycl::device::get_devices(sycl::info::device_type::gpu);
     }
 };
 
