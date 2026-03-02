@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.28)
 
 project(
-    HiHyP
+    HiHyPaK
     LANGUAGES CXX
 )
 
@@ -64,11 +64,11 @@ target_link_libraries(
 )
 
 option(
-    HIHYP_TEST_PARTITION_SPACE
+    HIHYPAK_TEST_PARTITION_SPACE
     "Build a library to test partition space with Kokkos"
 )
 
-if(HIHYP_TEST_PARTITION_SPACE)
+if(HIHYPAK_TEST_PARTITION_SPACE)
     add_executable(
         partition-space-multi-gpu
         partition_space_multi_gpu.cpp
