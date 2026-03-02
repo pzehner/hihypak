@@ -9,13 +9,13 @@ include(FetchContent)
 
 find_package(OpenMP REQUIRED)
 
-find_package(Kokkos 4.7.0 QUIET)
+find_package(Kokkos 5.0.2 QUIET)
 if(NOT Kokkos_FOUND)
     message(STATUS "Getting Kokkos from the repository")
     FetchContent_Declare(
         kokkos
         GIT_REPOSITORY https://github.com/kokkos/kokkos
-        GIT_TAG release-candidate-4.7.00
+        GIT_TAG 5.0.2
     )
     FetchContent_MakeAvailable(kokkos)
 endif()
