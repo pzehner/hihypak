@@ -38,8 +38,8 @@ int main(int argc, char *argv[]) {
   std::size_t const numDevices = devices::Devices::getNumDevices();
   std::size_t const numThreads = omp_extra::getNumThreads();
   std::size_t const threadsPerDevice =
-
       getThreadsPerDevice(numThreads, numDevices);
+
   if (command_line::isHelpRequested(argc, argv)) {
     Kokkos::printf(
         R"(multi-gpu [NUM_ELEMENTS [NUM_SUB_ELEMENTS [NUM_PASSES]]] [-h]
