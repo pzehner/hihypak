@@ -22,6 +22,30 @@ int main(int argc, char *argv[]) {
 
   // parameters
   std::size_t const numThreads = omp_extra::getNumThreads();
+
+  if (command_line::isHelpRequested(argc, argv)) {
+    Kokkos::printf(
+        R"(single-gpu [NUM_ELEMENTS [NUM_SUB_ELEMENTS [NUM_PASSES]]] [-h]
+
+Positional arguments:
+    NUM_ELEMENTS
+        Number of elements of computation (i.e. number of groups), default to
+        number of threads (%d).
+    NUM_SUB_ELEMENTS
+        Number of elements to compute per element of computation (i.e. number
+        of items per group), default to 1e6.
+    NUM_PASSES
+        Number of times to redo the computation within the kernel, default to
+        100.
+
+Optional arguments:
+    -h
+        Display this message and exit.
+)",
+        numThreads);
+    std::exit(EXIT_SUCCESS);
+  }
+
   std::size_t const numElements =
       command_line::getInt(argc, argv, 1, numThreads);
   std::size_t const numSubElements =
